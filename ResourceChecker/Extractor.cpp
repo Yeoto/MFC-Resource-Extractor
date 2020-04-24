@@ -305,7 +305,7 @@ void CExtractor::RemakeResourceID()
 				else
 					RCID = strParsed[RCTemp.nRCPlace];
 
-				if (mUsedID.Lookup(strParsed[RCTemp.nRCPlace], nCount))
+				if (mUsedID.Lookup(RCID, nCount))
 				{
 					CStringA strModify;
 					int      nResourceCnt = -1;
