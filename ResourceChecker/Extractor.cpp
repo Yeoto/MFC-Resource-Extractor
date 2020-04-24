@@ -350,8 +350,12 @@ int CExtractor::MakeDialogItem(std::ifstream &openFile)
 	BOOL bMultiLine = FALSE;
 	int nResourceType = FALSE;
 	int nTabs_MENU = 0;
+
+	CStringA strBackupIDD = ("");
+	int nLine = 0;
 	while (!openFile.eof())
 	{
+		nLine++;
 		openFile.getline(str, MAX_LEN);
 
 		if (str[0] == '#') continue;
@@ -393,12 +397,30 @@ int CExtractor::MakeDialogItem(std::ifstream &openFile)
 #pragma region RC_DIALOG_TYPE
 		if (nResourceType == RC_DIALOG_TPYE)
 		{
-			if ((asParsed[0].Left(asParsed[0].Find('_')) == "IDD") && (asParsed[0].Find('$') < 0))
+			if ((asParsed[0].Left(asParsed[0].Find('_')) == "IDD"))
 			{
 				std::map<CStringA, RCDATA> mUsedDialog;   mUsedDialog.clear();
 				mUsedDialog = m_mDialogBlock;
 
 				strDialogName = asParsed[0];
+
+				std::string str = strDialogName.GetBuffer(0);
+				std::regex reg("IDD[\\w|_]+\\$\\(\\w+\\)");
+				std::smatch m;
+
+				if (std::regex_match(str, m, reg))
+				{
+					CStringA temp = strDialogName;
+					temp = temp.Left(temp.Find('$'));
+					strBackupIDD = temp;
+					continue;
+				}
+
+				if (strDialogName == strBackupIDD)
+				{
+					strBackupIDD = "";
+					continue;
+				}
 
 				if (mUsedDialog.find(strDialogName) != mUsedDialog.end())
 				{
@@ -466,6 +488,7 @@ int CExtractor::MakeDialogItem(std::ifstream &openFile)
 
 				bStartDialog = FALSE;
 				strDialogName = "";
+				strBackupIDD = "";
 				mUsedID.RemoveAll();
 				asDIalogBlock.RemoveAll();
 			}
@@ -606,6 +629,7 @@ void CExtractor::PrintingDialogResource(CString strRcFile, std::ofstream& fOut)
 	BOOL bMultiLine = FALSE;
 	int nLine = 0;
 
+	CStringA strBackupIDD = "";
 	std::ifstream fIn(strRcFile, std::ios::in);
 	while (!fIn.eof())
 	{
@@ -636,9 +660,29 @@ void CExtractor::PrintingDialogResource(CString strRcFile, std::ofstream& fOut)
 			}
 		}
 
-		if ((asParsed[0].Left(asParsed[0].Find('_')) == "IDD") && (asParsed[0].Find('$') < 0))
+		if ((asParsed[0].Left(asParsed[0].Find('_')) == "IDD"))
 		{
 			strDialogName = asParsed[0];
+
+			std::string str = strDialogName.GetBuffer(0);
+			std::regex reg("IDD[\\w|_]+\\$\\(\\w+\\)");
+			std::smatch m;
+
+			if (std::regex_match(str, m, reg))
+			{
+				CStringA temp = strDialogName;
+				temp = temp.Left(temp.Find('$'));
+				strBackupIDD = temp;
+				fOut << ResourceLine << endl;
+				continue;
+			}
+
+			if (strDialogName == strBackupIDD)
+			{
+				strBackupIDD = "";
+				fOut << ResourceLine << endl;
+				continue;
+			}
 
 			if (DialogData.find(strDialogName) != DialogData.end())
 				bDialogBlock = TRUE;
