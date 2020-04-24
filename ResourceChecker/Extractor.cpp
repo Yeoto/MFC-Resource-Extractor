@@ -1,9 +1,11 @@
 ﻿#include "stdafx.h"
 #include "Extractor.h"
+#include <regex>
 
 CExtractor::CExtractor(BOOL bDialog)
 {
 	m_bDialog = bDialog;
+	m_bJP = FALSE;
 }
 
 void CExtractor::InitCtrlType()
@@ -102,8 +104,23 @@ void CExtractor::Extract(CString strRCFile, CString strOutputPath)
 	m_mUsedRC.RemoveAll();
 
 	CString strFileName = PathFindFileName(strRCFile);
-	CString strINIFilePath = strOutputPath + L"\\ctrl_" + strFileName + L".ini";
+	CFileFind fileFinder;
+	CString strFileNameWithOutExt;
+	if (fileFinder.FindFile(strRCFile))
+	{
+		fileFinder.FindNextFileW();
+		strFileNameWithOutExt = fileFinder.GetFileTitle();
+		fileFinder.Close();
+	}
+	CString strINIFilePath = strOutputPath + L"\\ctrl_" + strFileNameWithOutExt + L".ini";
 	CString strRCFileOut = strOutputPath + L"\\" + strFileName;
+
+	std::regex pattern("jp");
+
+	CT2CA pszConvertedAnsiString(strFileNameWithOutExt);
+	std::string s(pszConvertedAnsiString);
+
+	if (std::regex_search(s, pattern)) { m_bJP = TRUE; }
 
 	FILE *fOut_INI = NULL;
 	_wfopen_s(&fOut_INI, strINIFilePath, _T("wt,ccs=UNICODE"));     //유니코드 방식 저장용
@@ -548,8 +565,15 @@ wchar_t *CExtractor::m2w(char* pstr, int nStrLen)
 	if (!pstr) return NULL;
 	char Country[2][10] = {};
 
-	strcpy_s(Country[0], "Korean");
-	strcpy_s(Country[1], "Japanese");
+	if (m_bJP)
+	{
+		strcpy_s(Country[1], "Korean");
+		strcpy_s(Country[0], "Japanese");
+	}
+	else {
+		strcpy_s(Country[0], "Korean");
+		strcpy_s(Country[1], "Japanese");
+	}
 
 	setlocale(LC_ALL, Country[0]);
 	mbstowcs_s(&len, NULL, 0, pstr, 0);

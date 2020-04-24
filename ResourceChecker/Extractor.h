@@ -67,5 +67,7 @@ private:
 	BLOCKS m_aDialogBlock;
 
 	BOOL m_bDialog;
+
+	BOOL m_bJP;
 };
 
